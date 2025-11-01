@@ -20,7 +20,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:ui": "vitest --ui",
-    "analyze": "vite build --mode analyze",
+    "analyze": "vite build --mode analyze"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
