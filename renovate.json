@@ -1,0 +1,35 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["every weekend"],
+  "timezone": "America/New_York",
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch",
+      "automerge": true
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "all major dev dependencies",
+      "groupSlug": "all-major-dev"
+    },
+    {
+      "matchPackagePatterns": ["^@radix-ui/"],
+      "groupName": "Radix UI packages",
+      "groupSlug": "radix-ui"
+    },
+    {
+      "matchPackagePatterns": ["^@tanstack/"],
+      "groupName": "TanStack packages",
+      "groupSlug": "tanstack"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
+  "dependencyDashboard": true,
+  "labels": ["dependencies", "renovate"]
+}
