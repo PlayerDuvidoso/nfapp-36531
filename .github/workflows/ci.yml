@@ -8,7 +8,6 @@ on:
 
 env:
   NODE_VERSION: "24.10.0"
-  PNPM_VERSION: "10"
 
 jobs:
   lint-and-typecheck:
@@ -31,8 +30,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       # Use cache only if lockfile exists
       - name: Setup Node.js (cached)
@@ -86,8 +83,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js (cached)
         if: steps.lock.outputs.present == 'true'
@@ -140,8 +135,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js (cached)
         if: steps.lock.outputs.present == 'true'
@@ -202,8 +195,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js (cached)
         if: steps.lock.outputs.present == 'true'
@@ -259,8 +250,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js (cached)
         if: steps.lock.outputs.present == 'true'
