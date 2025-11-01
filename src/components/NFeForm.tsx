@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 interface NFeFormProps {
   onSuccess: () => void;
   onClose?: () => void;
+  initialShopId?: string;
 }
 
 interface Shop {
@@ -18,7 +19,7 @@ interface Shop {
   cnpj: string;
 }
 
-export function NFeForm({ onSuccess, onClose }: NFeFormProps) {
+export function NFeForm({ onSuccess, onClose, initialShopId }: NFeFormProps) {
   const [formData, setFormData] = useState({
     nfe_number: "",
     supplier: "",
@@ -47,8 +48,10 @@ export function NFeForm({ onSuccess, onClose }: NFeFormProps) {
       if (error) throw error;
       setShops(data || []);
       
-      // Auto-select if only one shop
-      if (data && data.length === 1) {
+      // Auto-select based on priority: initialShopId > only one shop exists
+      if (initialShopId && data?.some(shop => shop.id === initialShopId)) {
+        setFormData(prev => ({ ...prev, shop_id: initialShopId }));
+      } else if (data && data.length === 1) {
         setFormData(prev => ({ ...prev, shop_id: data[0].id }));
       }
     } catch (error) {
@@ -142,7 +145,9 @@ export function NFeForm({ onSuccess, onClose }: NFeFormProps) {
         issue_date: "",
         month_year: "",
         notes: "",
-        shop_id: shops.length === 1 ? shops[0].id : "",
+        shop_id: initialShopId && shops.some(shop => shop.id === initialShopId) 
+          ? initialShopId 
+          : (shops.length === 1 ? shops[0].id : ""),
       });
       
       onSuccess();

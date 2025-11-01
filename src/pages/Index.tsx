@@ -263,7 +263,11 @@ const Index = () => {
           <DialogHeader>
             <DialogTitle>Registrar Notas Fiscais</DialogTitle>
           </DialogHeader>
-          <NFeForm onSuccess={fetchNFes} onClose={() => setDialogOpen(false)} />
+          <NFeForm 
+            onSuccess={fetchNFes} 
+            onClose={() => setDialogOpen(false)} 
+            initialShopId={shopFilter !== "all" ? shopFilter : undefined}
+          />
         </DialogContent>
       </Dialog>
     </div>
