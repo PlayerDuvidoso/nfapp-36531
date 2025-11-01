@@ -1,14 +1,27 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "sistema-nota-fiscal",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.11.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "preview": "vite preview --host --port 4173",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:ui": "vitest --ui",
+    "analyze": "vite build --mode analyze",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -87,21 +100,15 @@
     "globals": "^15.15.0",
     "lovable-tagger": "^1.1.11",
     "postcss": "^8.5.6",
+    "prettier": "^3.3.3",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^5.4.19"
   },
-  "scripts": {
-    "typecheck": "tsc --noEmit",
-    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
-    "test": "vitest",
-    "test:watch": "vitest --watch",
-    "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
-    "test:ui": "vitest --ui",
-    "analyze": "vite build --mode analyze",
-    "prepare": "husky install"
+  "pnpm": {
+    "overrides": {
+      "esbuild": "^0.25.0"
+    }
   }
 }
