@@ -3,13 +3,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { NFeForm } from "@/components/NFeForm";
 import { NFeList } from "@/components/NFeList";
 import { DashboardStats } from "@/components/DashboardStats";
+import { ShopsManagement } from "@/components/ShopsManagement";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, Plus } from "lucide-react";
+import { FileSpreadsheet, Plus, Store } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+interface Shop {
+  id: string;
+  name: string;
+  cnpj: string;
+}
 
 interface NFe {
   id: string;
@@ -22,21 +30,39 @@ interface NFe {
   is_paid: boolean;
   added_to_stock: boolean;
   notes: string | null;
+  shop_id: string;
+  shops?: Shop;
 }
 
 const Index = () => {
   const [nfes, setNfes] = useState<NFe[]>([]);
   const [filteredNfes, setFilteredNfes] = useState<NFe[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
   const [monthFilter, setMonthFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [shopFilter, setShopFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const fetchShops = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("shops")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      setShops(data || []);
+    } catch (error) {
+      console.error("Error fetching shops:", error);
+    }
+  };
 
   const fetchNFes = async () => {
     try {
       const { data, error } = await supabase
         .from("notas_fiscais")
-        .select("*")
+        .select("*, shops(*)")
         .order("issue_date", { ascending: false });
 
       if (error) throw error;
@@ -50,6 +76,7 @@ const Index = () => {
   };
 
   useEffect(() => {
+    fetchShops();
     fetchNFes();
   }, []);
 
@@ -63,6 +90,11 @@ const Index = () => {
   useEffect(() => {
     let filtered = nfes;
     
+    // Apply shop filter
+    if (shopFilter && shopFilter !== "all") {
+      filtered = filtered.filter((nfe) => nfe.shop_id === shopFilter);
+    }
+    
     // Apply month filter
     if (monthFilter && monthFilter !== "all") {
       filtered = filtered.filter((nfe) => nfe.month_year === monthFilter);
@@ -74,7 +106,7 @@ const Index = () => {
     }
     
     setFilteredNfes(filtered);
-  }, [monthFilter, statusFilter, nfes]);
+  }, [shopFilter, monthFilter, statusFilter, nfes]);
 
   // Get unique months from NFes data
   const uniqueMonths = Array.from(
@@ -113,12 +145,42 @@ const Index = () => {
           </div>
         </header>
 
-        <DashboardStats nfes={filteredNfes} />
+        <Tabs defaultValue="nfes" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="nfes">
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Notas Fiscais
+            </TabsTrigger>
+            <TabsTrigger value="shops">
+              <Store className="h-4 w-4 mr-2" />
+              Lojas
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-end gap-4">
-            <div className="w-full max-w-xs space-y-2">
-              <Label htmlFor="month-filter">Filtrar por Mês/Ano</Label>
+          <TabsContent value="nfes" className="space-y-6">
+            <DashboardStats nfes={filteredNfes} />
+
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-end gap-4">
+                <div className="w-full max-w-xs space-y-2">
+                  <Label htmlFor="shop-filter">Filtrar por Loja</Label>
+                  <Select value={shopFilter} onValueChange={setShopFilter}>
+                    <SelectTrigger id="shop-filter">
+                      <SelectValue placeholder="Todas as Lojas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as Lojas</SelectItem>
+                      {shops.map((shop) => (
+                        <SelectItem key={shop.id} value={shop.id}>
+                          {shop.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="w-full max-w-xs space-y-2">
+                  <Label htmlFor="month-filter">Filtrar por Mês/Ano</Label>
               <Select value={monthFilter} onValueChange={setMonthFilter}>
                 <SelectTrigger id="month-filter">
                   <SelectValue placeholder="Todos os Meses" />
@@ -149,27 +211,34 @@ const Index = () => {
               </Select>
             </div>
             
-            {((monthFilter && monthFilter !== "all") || (statusFilter && statusFilter !== "all")) && (
-              <button
-                onClick={() => {
-                  setMonthFilter("all");
-                  setStatusFilter("all");
-                }}
-                className="text-sm text-muted-foreground hover:text-foreground underline"
-              >
-                Limpar filtros
-              </button>
-            )}
-          </div>
+                {((shopFilter && shopFilter !== "all") || (monthFilter && monthFilter !== "all") || (statusFilter && statusFilter !== "all")) && (
+                  <button
+                    onClick={() => {
+                      setShopFilter("all");
+                      setMonthFilter("all");
+                      setStatusFilter("all");
+                    }}
+                    className="text-sm text-muted-foreground hover:text-foreground underline"
+                  >
+                    Limpar filtros
+                  </button>
+                )}
+              </div>
 
-          {loading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Carregando...
+              {loading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Carregando...
+                </div>
+              ) : (
+                <NFeList nfes={filteredNfes} onUpdate={fetchNFes} />
+              )}
             </div>
-          ) : (
-            <NFeList nfes={filteredNfes} onUpdate={fetchNFes} />
-          )}
-        </div>
+          </TabsContent>
+
+          <TabsContent value="shops">
+            <ShopsManagement />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Sticky FAB Button */}

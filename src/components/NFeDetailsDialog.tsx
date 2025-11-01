@@ -16,6 +16,12 @@ import { CheckCircle2, Circle, Edit2, Save, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+interface Shop {
+  id: string;
+  name: string;
+  cnpj: string;
+}
+
 interface NFe {
   id: string;
   nfe_number: string;
@@ -27,6 +33,8 @@ interface NFe {
   is_paid: boolean;
   added_to_stock: boolean;
   notes: string | null;
+  shop_id: string;
+  shops?: Shop;
 }
 
 interface NFeDetailsDialogProps {
@@ -108,6 +116,16 @@ export const NFeDetailsDialog = ({ nfe, open, onOpenChange, onUpdate }: NFeDetai
           <div className="space-y-6">
             {/* Key Details Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Loja</p>
+                <p className="font-medium">{nfe.shops?.name || "-"}</p>
+                {nfe.shops?.cnpj && (
+                  <p className="text-sm text-muted-foreground">
+                    CNPJ: {nfe.shops.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5")}
+                  </p>
+                )}
+              </div>
+
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Fornecedor</p>
                 <p className="font-medium">{nfe.supplier}</p>

@@ -14,7 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      notas_fiscais: {
+        Row: {
+          added_to_stock: boolean
+          created_at: string
+          id: string
+          is_paid: boolean
+          issue_date: string
+          month_year: string
+          nfe_number: string
+          notes: string | null
+          sent_to_accounting: boolean
+          shop_id: string
+          supplier: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          added_to_stock?: boolean
+          created_at?: string
+          id?: string
+          is_paid?: boolean
+          issue_date: string
+          month_year: string
+          nfe_number: string
+          notes?: string | null
+          sent_to_accounting?: boolean
+          shop_id: string
+          supplier: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          added_to_stock?: boolean
+          created_at?: string
+          id?: string
+          is_paid?: boolean
+          issue_date?: string
+          month_year?: string
+          nfe_number?: string
+          notes?: string | null
+          sent_to_accounting?: boolean
+          shop_id?: string
+          supplier?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_fiscais_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shops: {
+        Row: {
+          cnpj: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          cnpj: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

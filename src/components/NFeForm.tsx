@@ -1,20 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 interface NFeFormProps {
   onSuccess: () => void;
   onClose?: () => void;
 }
 
-export const NFeForm = ({ onSuccess, onClose }: NFeFormProps) => {
-  const [loading, setLoading] = useState(false);
-  const [addedCount, setAddedCount] = useState(0);
+interface Shop {
+  id: string;
+  name: string;
+  cnpj: string;
+}
+
+export function NFeForm({ onSuccess, onClose }: NFeFormProps) {
   const [formData, setFormData] = useState({
     nfe_number: "",
     supplier: "",
@@ -22,15 +26,41 @@ export const NFeForm = ({ onSuccess, onClose }: NFeFormProps) => {
     issue_date: "",
     month_year: "",
     notes: "",
+    shop_id: "",
   });
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [addedCount, setAddedCount] = useState(0);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchShops();
+  }, []);
+
+  const fetchShops = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("shops")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      setShops(data || []);
+      
+      // Auto-select if only one shop
+      if (data && data.length === 1) {
+        setFormData(prev => ({ ...prev, shop_id: data[0].id }));
+      }
+    } catch (error) {
+      console.error("Error fetching shops:", error);
+    }
+  };
 
   const parseMonthYear = (input: string): string => {
-    // If already in YYYY-MM format, return as-is
     if (/^\d{4}-\d{2}$/.test(input)) {
       return input;
     }
 
-    // Handle MM/YYYY format
     const slashMatch = input.match(/^(\d{1,2})\/(\d{4})$/);
     if (slashMatch) {
       const month = slashMatch[1].padStart(2, '0');
@@ -38,7 +68,6 @@ export const NFeForm = ({ onSuccess, onClose }: NFeFormProps) => {
       return `${year}-${month}`;
     }
 
-    // Handle text month format like "Outubro/2025"
     const monthNames: { [key: string]: string } = {
       'janeiro': '01', 'fevereiro': '02', 'março': '03', 'abril': '04',
       'maio': '05', 'junho': '06', 'julho': '07', 'agosto': '08',
@@ -55,32 +84,50 @@ export const NFeForm = ({ onSuccess, onClose }: NFeFormProps) => {
       }
     }
 
-    // If format not recognized, return as-is
     return input;
   };
 
   const handleSubmit = async (keepOpen: boolean) => {
-    setLoading(true);
+    if (!formData.nfe_number || !formData.supplier || !formData.value || !formData.shop_id) {
+      toast({
+        title: "Campos obrigatórios faltando",
+        description: "Por favor, preencha todos os campos obrigatórios, incluindo a loja.",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    if (shops.length === 0) {
+      toast({
+        title: "Nenhuma loja cadastrada",
+        description: "Cadastre pelo menos uma loja antes de adicionar NFes.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
     try {
       const parsedMonthYear = parseMonthYear(formData.month_year);
       
-      const { error } = await supabase.from("notas_fiscais").insert([
-        {
-          nfe_number: formData.nfe_number,
-          supplier: formData.supplier,
-          value: parseFloat(formData.value),
-          issue_date: formData.issue_date,
-          month_year: parsedMonthYear,
-          notes: formData.notes || null,
-        },
-      ]);
+      const { error } = await supabase.from("notas_fiscais").insert({
+        nfe_number: formData.nfe_number,
+        supplier: formData.supplier,
+        value: parseFloat(formData.value),
+        issue_date: formData.issue_date,
+        month_year: parsedMonthYear,
+        notes: formData.notes || null,
+        shop_id: formData.shop_id,
+      });
 
       if (error) throw error;
 
       const newCount = addedCount + 1;
       setAddedCount(newCount);
-      toast.success("NFe registrada com sucesso!");
+      toast({
+        title: "NFe registrada!",
+        description: "A nota fiscal foi registrada com sucesso.",
+      });
       
       setFormData({
         nfe_number: "",
@@ -89,127 +136,165 @@ export const NFeForm = ({ onSuccess, onClose }: NFeFormProps) => {
         issue_date: "",
         month_year: "",
         notes: "",
+        shop_id: shops.length === 1 ? shops[0].id : "",
       });
       
       onSuccess();
 
       if (!keepOpen && onClose) {
-        toast.success(`${newCount} NFe(s) registrada(s) no total!`);
+        toast({
+          title: "Concluído!",
+          description: `${newCount} NFe(s) registrada(s) no total!`,
+        });
         onClose();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error inserting NFe:", error);
-      toast.error("Erro ao registrar NFe");
+      toast({
+        title: "Erro ao registrar NFe",
+        description: error.message || "Não foi possível registrar a nota fiscal.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  const formatCNPJ = (cnpj: string): string => {
+    return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+  };
+
   return (
-    <div className="space-y-4">
+    <form className="space-y-6">
       {addedCount > 0 && (
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground bg-accent p-3 rounded-md">
           ✓ {addedCount} NFe(s) registrada(s) nesta sessão
         </div>
       )}
-      <form onSubmit={(e) => { e.preventDefault(); }} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="nfe_number">Número da NFe</Label>
-              <Input
-                id="nfe_number"
-                required
-                value={formData.nfe_number}
-                onChange={(e) =>
-                  setFormData({ ...formData, nfe_number: e.target.value })
-                }
-                placeholder="Ex: 123456789"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="supplier">Fornecedor</Label>
-              <Input
-                id="supplier"
-                required
-                value={formData.supplier}
-                onChange={(e) =>
-                  setFormData({ ...formData, supplier: e.target.value })
-                }
-                placeholder="Nome do fornecedor"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="value">Valor (R$)</Label>
-              <Input
-                id="value"
-                type="number"
-                step="0.01"
-                required
-                value={formData.value}
-                onChange={(e) =>
-                  setFormData({ ...formData, value: e.target.value })
-                }
-                placeholder="0.00"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="issue_date">Data de Emissão</Label>
-              <Input
-                id="issue_date"
-                type="date"
-                required
-                value={formData.issue_date}
-                onChange={(e) =>
-                  setFormData({ ...formData, issue_date: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="month_year">Mês/Ano</Label>
-              <Input
-                id="month_year"
-                type="text"
-                required
-                value={formData.month_year}
-                onChange={(e) =>
-                  setFormData({ ...formData, month_year: e.target.value })
-                }
-                placeholder="Ex: 10/2025 ou Outubro/2025"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="notes">Observações (opcional)</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
-              placeholder="Adicione observações sobre esta NFe"
-              rows={3}
-            />
-          </div>
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleSubmit(true)}
-              disabled={loading}
-              className="flex-1"
-            >
-              {loading ? "Salvando..." : "Adicionar Mais"}
-            </Button>
-            <Button
-              type="button"
-              onClick={() => handleSubmit(false)}
-              disabled={loading}
-              className="flex-1"
-            >
-              {loading ? "Salvando..." : "Salvar e Fechar"}
-            </Button>
-          </div>
-        </form>
-    </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="shop_id">Loja *</Label>
+          <Select
+            value={formData.shop_id}
+            onValueChange={(value) =>
+              setFormData({ ...formData, shop_id: value })
+            }
+          >
+            <SelectTrigger id="shop_id">
+              <SelectValue placeholder="Selecione a loja" />
+            </SelectTrigger>
+            <SelectContent>
+              {shops.map((shop) => (
+                <SelectItem key={shop.id} value={shop.id}>
+                  {shop.name} - {formatCNPJ(shop.cnpj)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="nfe_number">Número da NFe *</Label>
+          <Input
+            id="nfe_number"
+            value={formData.nfe_number}
+            onChange={(e) =>
+              setFormData({ ...formData, nfe_number: e.target.value })
+            }
+            placeholder="Ex: 123456789"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="supplier">Fornecedor *</Label>
+          <Input
+            id="supplier"
+            value={formData.supplier}
+            onChange={(e) =>
+              setFormData({ ...formData, supplier: e.target.value })
+            }
+            placeholder="Nome do fornecedor"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="value">Valor (R$) *</Label>
+          <Input
+            id="value"
+            type="number"
+            step="0.01"
+            value={formData.value}
+            onChange={(e) =>
+              setFormData({ ...formData, value: e.target.value })
+            }
+            placeholder="0.00"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="issue_date">Data de Emissão *</Label>
+          <Input
+            id="issue_date"
+            type="date"
+            value={formData.issue_date}
+            onChange={(e) =>
+              setFormData({ ...formData, issue_date: e.target.value })
+            }
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="month_year">Mês/Ano *</Label>
+          <Input
+            id="month_year"
+            type="text"
+            value={formData.month_year}
+            onChange={(e) =>
+              setFormData({ ...formData, month_year: e.target.value })
+            }
+            placeholder="Ex: 10/2025 ou Outubro/2025"
+            required
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="notes">Observações (opcional)</Label>
+        <Textarea
+          id="notes"
+          value={formData.notes}
+          onChange={(e) =>
+            setFormData({ ...formData, notes: e.target.value })
+          }
+          placeholder="Adicione observações sobre esta NFe"
+          rows={3}
+        />
+      </div>
+
+      <div className="flex gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => handleSubmit(true)}
+          disabled={loading}
+          className="flex-1"
+        >
+          {loading ? "Salvando..." : "Adicionar Mais"}
+        </Button>
+        <Button
+          type="button"
+          onClick={() => handleSubmit(false)}
+          disabled={loading}
+          className="flex-1"
+        >
+          {loading ? "Salvando..." : "Salvar e Fechar"}
+        </Button>
+      </div>
+    </form>
   );
-};
+}

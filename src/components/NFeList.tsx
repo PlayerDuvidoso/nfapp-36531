@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,10 +11,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { NFeDetailsDialog } from "./NFeDetailsDialog";
+
+interface Shop {
+  id: string;
+  name: string;
+  cnpj: string;
+}
 
 interface NFe {
   id: string;
@@ -28,6 +33,8 @@ interface NFe {
   is_paid: boolean;
   added_to_stock: boolean;
   notes: string | null;
+  shop_id: string;
+  shops?: Shop;
 }
 
 interface NFeListProps {
@@ -35,9 +42,10 @@ interface NFeListProps {
   onUpdate: () => void;
 }
 
-export const NFeList = ({ nfes, onUpdate }: NFeListProps) => {
+export function NFeList({ nfes, onUpdate }: NFeListProps) {
   const [updating, setUpdating] = useState<string | null>(null);
   const [selectedNfe, setSelectedNfe] = useState<NFe | null>(null);
+  const { toast } = useToast();
 
   const updateNFe = async (
     id: string,
@@ -52,11 +60,18 @@ export const NFeList = ({ nfes, onUpdate }: NFeListProps) => {
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Status atualizado!");
+      toast({
+        title: "Status atualizado!",
+        description: "O status da NFe foi atualizado com sucesso.",
+      });
       onUpdate();
     } catch (error) {
       console.error("Error updating NFe:", error);
-      toast.error("Erro ao atualizar status");
+      toast({
+        title: "Erro ao atualizar",
+        description: "Não foi possível atualizar o status da NFe.",
+        variant: "destructive",
+      });
     } finally {
       setUpdating(null);
     }
@@ -70,14 +85,12 @@ export const NFeList = ({ nfes, onUpdate }: NFeListProps) => {
   };
 
   const getStatusBadge = (nfe: NFe) => {
-    const statuses = [
-      { condition: nfe.sent_to_accounting, label: "Contabilidade", variant: "default" as const },
-      { condition: nfe.is_paid, label: "Pago", variant: "default" as const },
-      { condition: nfe.added_to_stock, label: "Estoque", variant: "default" as const },
-    ];
+    const completed = [
+      nfe.sent_to_accounting,
+      nfe.is_paid,
+      nfe.added_to_stock,
+    ].filter(Boolean).length;
 
-    const completed = statuses.filter(s => s.condition).length;
-    
     if (completed === 3) {
       return <Badge className="bg-success text-success-foreground">Completo</Badge>;
     } else if (completed > 0) {
@@ -96,33 +109,34 @@ export const NFeList = ({ nfes, onUpdate }: NFeListProps) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Status</TableHead>
                 <TableHead>NFe</TableHead>
+                <TableHead>Loja</TableHead>
                 <TableHead>Fornecedor</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead>Mês/Ano</TableHead>
-                <TableHead className="text-center">Contab.</TableHead>
+                <TableHead className="text-center">Enviado</TableHead>
                 <TableHead className="text-center">Pago</TableHead>
                 <TableHead className="text-center">Estoque</TableHead>
+                <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {nfes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                     Nenhuma NFe registrada ainda
                   </TableCell>
                 </TableRow>
               ) : (
                 nfes.map((nfe) => (
-                  <TableRow 
+                  <TableRow
                     key={nfe.id}
+                    className="cursor-pointer hover:bg-accent/50"
                     onClick={() => setSelectedNfe(nfe)}
-                    className="cursor-pointer hover:bg-muted/50 transition-colors"
                   >
-                    <TableCell>{getStatusBadge(nfe)}</TableCell>
                     <TableCell className="font-medium">{nfe.nfe_number}</TableCell>
+                    <TableCell>{nfe.shops?.name || "-"}</TableCell>
                     <TableCell>{nfe.supplier}</TableCell>
                     <TableCell>{formatCurrency(nfe.value)}</TableCell>
                     <TableCell>
@@ -131,23 +145,27 @@ export const NFeList = ({ nfes, onUpdate }: NFeListProps) => {
                       })}
                     </TableCell>
                     <TableCell>
-                      {nfe.month_year ? (() => {
-                        try {
-                          // Only format if it's in YYYY-MM format
-                          if (/^\d{4}-\d{2}$/.test(nfe.month_year)) {
-                            return format(new Date(nfe.month_year + "-01"), "MMM/yyyy", {
-                              locale: ptBR,
-                            }).replace(/^\w/, (c) => c.toUpperCase());
-                          }
-                          // Display raw value if not in expected format
-                          return nfe.month_year;
-                        } catch (error) {
-                          console.error('Error formatting month_year:', error);
-                          return nfe.month_year;
-                        }
-                      })() : "-"}
+                      {nfe.month_year
+                        ? (() => {
+                            try {
+                              if (/^\d{4}-\d{2}$/.test(nfe.month_year)) {
+                                return format(
+                                  new Date(nfe.month_year + "-01"),
+                                  "MMM/yyyy",
+                                  { locale: ptBR }
+                                ).replace(/^\w/, (c) => c.toUpperCase());
+                              }
+                              return nfe.month_year;
+                            } catch (error) {
+                              return nfe.month_year;
+                            }
+                          })()
+                        : "-"}
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell 
+                      className="text-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Checkbox
                         checked={nfe.sent_to_accounting}
                         disabled={updating === nfe.id}
@@ -156,7 +174,10 @@ export const NFeList = ({ nfes, onUpdate }: NFeListProps) => {
                         }
                       />
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell 
+                      className="text-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Checkbox
                         checked={nfe.is_paid}
                         disabled={updating === nfe.id}
@@ -165,7 +186,10 @@ export const NFeList = ({ nfes, onUpdate }: NFeListProps) => {
                         }
                       />
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell 
+                      className="text-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Checkbox
                         checked={nfe.added_to_stock}
                         disabled={updating === nfe.id}
@@ -174,14 +198,15 @@ export const NFeList = ({ nfes, onUpdate }: NFeListProps) => {
                         }
                       />
                     </TableCell>
+                    <TableCell>{getStatusBadge(nfe)}</TableCell>
                   </TableRow>
                 ))
               )}
             </TableBody>
           </Table>
         </div>
-        
-        <NFeDetailsDialog 
+
+        <NFeDetailsDialog
           nfe={selectedNfe}
           open={!!selectedNfe}
           onOpenChange={(open) => !open && setSelectedNfe(null)}
@@ -190,4 +215,4 @@ export const NFeList = ({ nfes, onUpdate }: NFeListProps) => {
       </CardContent>
     </Card>
   );
-};
+}
