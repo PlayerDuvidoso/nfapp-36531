@@ -33,7 +33,11 @@ const validateCNPJ = (cnpj: string): boolean => {
   return numbers.length === 14;
 };
 
-export function ShopsManagement() {
+interface ShopsManagementProps {
+  onShopsChange?: () => void;
+}
+
+export function ShopsManagement({ onShopsChange }: ShopsManagementProps = {}) {
   const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -107,6 +111,7 @@ export function ShopsManagement() {
       setEditingShop(null);
       setDialogOpen(false);
       fetchShops();
+      onShopsChange?.();
     } catch (error: any) {
       console.error("Error saving shop:", error);
       toast({
@@ -138,6 +143,7 @@ export function ShopsManagement() {
         description: "A loja foi excluída com sucesso.",
       });
       fetchShops();
+      onShopsChange?.();
     } catch (error: any) {
       console.error("Error deleting shop:", error);
       toast({

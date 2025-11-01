@@ -53,6 +53,14 @@ const Index = () => {
 
       if (error) throw error;
       setShops(data || []);
+      
+      // Reset shop filter if currently selected shop no longer exists
+      if (shopFilter !== "all" && data) {
+        const shopExists = data.some(shop => shop.id === shopFilter);
+        if (!shopExists) {
+          setShopFilter("all");
+        }
+      }
     } catch (error) {
       console.error("Error fetching shops:", error);
     }
@@ -236,7 +244,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="shops">
-            <ShopsManagement />
+            <ShopsManagement onShopsChange={fetchShops} />
           </TabsContent>
         </Tabs>
       </div>

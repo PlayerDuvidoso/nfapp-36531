@@ -56,6 +56,12 @@ export function NFeForm({ onSuccess, onClose }: NFeFormProps) {
     }
   };
 
+  const normalizeValue = (value: string): number => {
+    // Replace comma with period for parsing
+    const normalized = value.replace(',', '.');
+    return parseFloat(normalized);
+  };
+
   const parseMonthYear = (input: string): string => {
     if (/^\d{4}-\d{2}$/.test(input)) {
       return input;
@@ -113,7 +119,7 @@ export function NFeForm({ onSuccess, onClose }: NFeFormProps) {
       const { error } = await supabase.from("notas_fiscais").insert({
         nfe_number: formData.nfe_number,
         supplier: formData.supplier,
-        value: parseFloat(formData.value),
+        value: normalizeValue(formData.value),
         issue_date: formData.issue_date,
         month_year: parsedMonthYear,
         notes: formData.notes || null,
@@ -224,13 +230,17 @@ export function NFeForm({ onSuccess, onClose }: NFeFormProps) {
           <Label htmlFor="value">Valor (R$) *</Label>
           <Input
             id="value"
-            type="number"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
             value={formData.value}
-            onChange={(e) =>
-              setFormData({ ...formData, value: e.target.value })
-            }
-            placeholder="0.00"
+            onChange={(e) => {
+              const value = e.target.value;
+              // Allow numbers, comma, and period
+              if (/^[\d,\.]*$/.test(value)) {
+                setFormData({ ...formData, value });
+              }
+            }}
+            placeholder="0,00 ou 0.00"
             required
           />
         </div>
