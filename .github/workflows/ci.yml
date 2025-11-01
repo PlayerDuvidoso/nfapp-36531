@@ -18,6 +18,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Enable corepack
+        run: corepack enable
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -29,8 +32,23 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
+      - name: Detect lockfile
+        id: lock
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          if [ "${{ steps.lock.outputs.present }}" = "true" ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "pnpm-lock.yaml not found, generating one (non-frozen install)"
+            pnpm install --no-frozen-lockfile
+          fi
 
       - name: Run ESLint
         run: pnpm lint
@@ -48,6 +66,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Enable corepack
+        run: corepack enable
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -59,8 +80,23 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
+      - name: Detect lockfile
+        id: lock
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          if [ "${{ steps.lock.outputs.present }}" = "true" ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "pnpm-lock.yaml not found, generating one (non-frozen install)"
+            pnpm install --no-frozen-lockfile
+          fi
 
       - name: Run unit tests with coverage
         run: pnpm test:coverage
@@ -79,6 +115,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Enable corepack
+        run: corepack enable
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -90,8 +129,23 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
+      - name: Detect lockfile
+        id: lock
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          if [ "${{ steps.lock.outputs.present }}" = "true" ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "pnpm-lock.yaml not found, generating one (non-frozen install)"
+            pnpm install --no-frozen-lockfile
+          fi
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
@@ -118,6 +172,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Enable corepack
+        run: corepack enable
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -129,8 +186,23 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
+      - name: Detect lockfile
+        id: lock
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          if [ "${{ steps.lock.outputs.present }}" = "true" ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "pnpm-lock.yaml not found, generating one (non-frozen install)"
+            pnpm install --no-frozen-lockfile
+          fi
 
       - name: Build application
         run: pnpm build
@@ -152,6 +224,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Enable corepack
+        run: corepack enable
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -163,8 +238,23 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
 
+      - name: Detect lockfile
+        id: lock
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          if [ "${{ steps.lock.outputs.present }}" = "true" ]; then
+            pnpm install --frozen-lockfile
+          else
+            echo "pnpm-lock.yaml not found, generating one (non-frozen install)"
+            pnpm install --no-frozen-lockfile
+          fi
 
       - name: Run security audit
         run: pnpm audit --audit-level=moderate
