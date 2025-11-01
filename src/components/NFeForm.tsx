@@ -36,7 +36,7 @@ export function NFeForm({ onSuccess, onClose, initialShopId }: NFeFormProps) {
 
   useEffect(() => {
     fetchShops();
-  }, []);
+  }, [initialShopId]);
 
   const fetchShops = async () => {
     try {
@@ -187,6 +187,7 @@ export function NFeForm({ onSuccess, onClose, initialShopId }: NFeFormProps) {
         <div className="space-y-2">
           <Label htmlFor="shop_id">Loja *</Label>
           <Select
+            key={formData.shop_id}
             value={formData.shop_id}
             onValueChange={(value) =>
               setFormData({ ...formData, shop_id: value })
