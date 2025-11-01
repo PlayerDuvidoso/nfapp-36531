@@ -26,8 +26,8 @@ function validateEnv(): Env {
     VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
     VITE_SUPABASE_PUBLISHABLE_KEY: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
     VITE_SUPABASE_PROJECT_ID: import.meta.env.VITE_SUPABASE_PROJECT_ID,
-    VITE_APP_ENV: import.meta.env.VITE_APP_ENV,
-    VITE_APP_VERSION: import.meta.env.VITE_APP_VERSION,
+    VITE_APP_ENV: import.meta.env.VITE_APP_ENV || import.meta.env.MODE,
+    VITE_APP_VERSION: import.meta.env.VITE_APP_VERSION || "dev",
     VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
     VITE_PLAUSIBLE_DOMAIN: import.meta.env.VITE_PLAUSIBLE_DOMAIN,
   };
@@ -43,6 +43,11 @@ function validateEnv(): Env {
       console.error("\nPlease ensure all required variables are set in your .env file.");
       console.error("See .env.example for reference.\n");
       console.error("Detailed errors:", error.issues);
+
+      // In CI/test, provide more helpful error
+      if (import.meta.env.MODE === "test" || process.env.CI) {
+        console.error("\n⚠️  Running in CI/test mode. Set variables in GitHub Secrets.");
+      }
 
       throw new Error(
         `Environment validation failed. Missing/invalid: ${missingVars}. Check console for details.`

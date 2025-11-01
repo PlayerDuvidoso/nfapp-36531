@@ -12,7 +12,7 @@ export default defineConfig({
   reporter: process.env.CI ? "html" : "list",
   
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:8080",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:4173",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
@@ -43,7 +43,7 @@ export default defineConfig({
 
   webServer: {
     command: "pnpm preview",
-    url: "http://localhost:8080",
+    url: "http://localhost:4173",
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },
