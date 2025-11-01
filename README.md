@@ -71,7 +71,7 @@ graph TD
 
 ## 📦 Prerequisites
 
-- **Node.js**: 24.10.0 or higher (see `.nvmrc`)
+- **Node.js**: 24.11.0 or higher (see `.nvmrc`)
 - **pnpm**: 10.x (install with `npm install -g pnpm`)
 - **Supabase Project**: For backend services
 - **Git**: For version control
@@ -239,7 +239,7 @@ npx serve -s dist -l $PORT
 **HTTP Port:** Uses `$PORT` environment variable (set automatically by DigitalOcean)
 
 **Runtime Versions:**
-- Node: **24.10.x** (pinned via `engines`, `.nvmrc`, `.node-version`)
+- Node: **24.11.0** (pinned via `engines`, `.nvmrc`, `.node-version`)
 - PNPM: **10.x** (via `packageManager` field)
 
 > **Note:** These versions satisfy `semantic-release@25` requirements (`^22.14.0 || >=24.10.0`). DigitalOcean will automatically detect and use the pinned Node version.
@@ -386,7 +386,7 @@ Access via: App → Insights tab
 ### Build Failures
 
 **Issue**: `pnpm install` fails
-**Solution**: Ensure Node 22.x is installed (`nvm use`)
+**Solution**: Ensure Node 24.11.0 is installed (`nvm use`)
 
 **Issue**: TypeScript errors
 **Solution**: Run `pnpm typecheck` to see detailed errors
