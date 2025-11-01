@@ -71,7 +71,7 @@ graph TD
 
 ## 📦 Prerequisites
 
-- **Node.js**: 24.11.0 or higher (see `.nvmrc`)
+- **Node.js**: 24.2.x (see `.nvmrc`)
 - **pnpm**: 10.x (install with `npm install -g pnpm`)
 - **Supabase Project**: For backend services
 - **Git**: For version control
@@ -239,10 +239,10 @@ npx serve -s dist -l $PORT
 **HTTP Port:** Uses `$PORT` environment variable (set automatically by DigitalOcean)
 
 **Runtime Versions:**
-- Node: **24.11.0** (pinned via `engines`, `.nvmrc`, `.node-version`)
+- Node: **24.2.x** (pinned via `engines`, `.nvmrc`, `.node-version`)
 - PNPM: **10.x** (via `packageManager` field)
 
-> **Note:** These versions satisfy `semantic-release@25` requirements (`^22.14.0 || >=24.10.0`). DigitalOcean will automatically detect and use the pinned Node version.
+> **Note:** DigitalOcean will automatically detect and use the pinned Node version from package.json engines field.
 
 **Scaling:** Start with 1-2 instances, scale as needed
 
@@ -270,8 +270,19 @@ Click **Create Resources**. DigitalOcean will:
 
 Every push to `main` triggers:
 1. ✅ GitHub Actions CI (lint, test, build, security audit)
-2. ✅ Semantic Release (version bump, changelog, GitHub release)
-3. ✅ DigitalOcean auto-deploy (build & deploy new version)
+2. ✅ DigitalOcean auto-deploy (build & deploy new version)
+
+### Release Process
+
+Releases are currently **manual** to support Node 24.2.0 on DigitalOcean:
+
+1. Update version in `package.json`
+2. Commit: `git commit -am "chore: bump version to x.x.x"`
+3. Create tag: `git tag -a vx.x.x -m "Release x.x.x"`
+4. Push: `git push origin main --tags`
+5. Create release notes via [GitHub UI](https://github.com/your-org/sistema-nota-fiscal/releases/new)
+
+> **Future:** To re-enable automated releases with semantic-release, upgrade DigitalOcean to Node ≥24.10.0.
 
 ### Health Check
 
@@ -386,7 +397,7 @@ Access via: App → Insights tab
 ### Build Failures
 
 **Issue**: `pnpm install` fails
-**Solution**: Ensure Node 24.11.0 is installed (`nvm use`)
+**Solution**: Ensure Node 24.2.0 is installed (`nvm use`)
 
 **Issue**: TypeScript errors
 **Solution**: Run `pnpm typecheck` to see detailed errors
